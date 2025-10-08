@@ -18,7 +18,7 @@
             <h5>@(editingOsoba != null ? "Edytuj osobę" : "Dodaj nową osobę")</h5>
         </div>
         <div class="card-body">
-            <EditForm Model="@currentOsoba" OnValidSubmit="@SaveOsoba">
+            <EditForm Model="@currentOsoba" OnSubmit="@SaveOsoba">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
 
@@ -93,25 +93,27 @@
 @code {
     private List<Osoba>? osoby;
     private Osoba currentOsoba = new Osoba();
-    private Osoba? editingOsoba;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadOsoby();
-    }
+    private Osoba? editingOsoba = null;
 
     private async Task LoadOsoby()
     {
         osoby = await DbContext.Osoby.ToListAsync();
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        currentOsoba = new Osoba(); // 🔹 dodaj to
+        await LoadOsoby();
+    }
+
     private async Task SaveOsoba()
     {
+        Console.WriteLine($"===> Kliknięto Zapisz, editingOsoba = {editingOsoba != null}, Nazwisko = '{currentOsoba?.Nazwisko}'");
+
         try
         {
             if (editingOsoba != null)
             {
-                // Edycja istniejącej osoby
                 var osobaToUpdate = await DbContext.Osoby.FindAsync(editingOsoba.Id);
                 if (osobaToUpdate != null)
                 {
@@ -121,15 +123,19 @@
             }
             else
             {
-                // Dodawanie nowej osoby
-                DbContext.Osoby.Add(currentOsoba);
-                await DbContext.SaveChangesAsync();
+                Console.WriteLine($"===> Dodawanie nowej osoby: {currentOsoba?.Nazwisko}");
+                if (!string.IsNullOrWhiteSpace(currentOsoba.Nazwisko)) // 🔹 sprawdzenie
+                {
+                    DbContext.Osoby.Add(new Osoba { Nazwisko = currentOsoba.Nazwisko }); // 🔹 nowy obiekt
+                    await DbContext.SaveChangesAsync();
+                }
             }
 
-            // Resetuj formularz
+            // Reset formularza
             currentOsoba = new Osoba();
             editingOsoba = null;
             await LoadOsoby();
+            StateHasChanged(); // 🔹 wymuś odświeżenie UI
         }
         catch (Exception ex)
         {
@@ -137,8 +143,11 @@
         }
     }
 
+
     private void EditOsoba(Osoba osoba)
     {
+        Console.WriteLine("===> SaveOsoba wywołane");
+        Console.WriteLine($"Nazwisko: {currentOsoba?.Nazwisko}");
         editingOsoba = osoba;
         currentOsoba = new Osoba
         {

@@ -17,7 +17,7 @@ namespace BlazorApp1.Data
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Osoba>()
-                .ToTable("osoba2");
+                .ToTable("osoba");
         }
     }
 }
