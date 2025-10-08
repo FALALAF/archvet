@@ -1,0 +1,18 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace BlazorApp1.Models
+{
+    [Table("osoba2")]
+    public class Osoba
+    {
+        [Key]
+        [Column("id")]
+        public int Id { get; set; }
+
+        [Column("nazwisko")]
+        [Required(ErrorMessage = "Nazwisko jest wymagane")]
+        [StringLength(100)]
+        public string Nazwisko { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,166 @@
+﻿@page "/osoby"
+@using BlazorApp1.Models
+@using BlazorApp1.Data
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+@rendermode InteractiveServer
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+<PageTitle>Zarządzanie Osobami</PageTitle>
+
+<h3>Zarządzanie Osobami</h3>
+
+<div class="container mt-4">
+    <!-- Formularz dodawania/edycji -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>@(editingOsoba != null ? "Edytuj osobę" : "Dodaj nową osobę")</h5>
+        </div>
+        <div class="card-body">
+            <EditForm Model="@currentOsoba" OnValidSubmit="@SaveOsoba">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="mb-3">
+                    <label class="form-label">Nazwisko:</label>
+                    <InputText class="form-control" @bind-Value="currentOsoba.Nazwisko" />
+                    <ValidationMessage For="@(() => currentOsoba.Nazwisko)" />
+                </div>
+
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">
+                        @(editingOsoba != null ? "Zapisz zmiany" : "Dodaj")
+                    </button>
+                    @if (editingOsoba != null)
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="CancelEdit">
+                            Anuluj
+                        </button>
+                    }
+                </div>
+            </EditForm>
+        </div>
+    </div>
+
+    <!-- Lista osób -->
+    <div class="card">
+        <div class="card-header">
+            <h5>Lista osób</h5>
+        </div>
+        <div class="card-body">
+            @if (osoby == null)
+            {
+                <p><em>Ładowanie...</em></p>
+            }
+            else if (!osoby.Any())
+            {
+                <p>Brak osób w bazie danych.</p>
+            }
+            else
+            {
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            @* <th>ID</th> *@
+                            <th>Nazwisko</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var osoba in osoby)
+                        {
+                            <tr>
+                                @* <td>@osoba.Id</td> *@
+                                <td>@osoba.Nazwisko</td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning" @onclick="() => EditOsoba(osoba)" title="Edytuj">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteOsoba(osoba.Id)" title="Usuń">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Osoba>? osoby;
+    private Osoba currentOsoba = new Osoba();
+    private Osoba? editingOsoba;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOsoby();
+    }
+
+    private async Task LoadOsoby()
+    {
+        osoby = await DbContext.Osoby.ToListAsync();
+    }
+
+    private async Task SaveOsoba()
+    {
+        try
+        {
+            if (editingOsoba != null)
+            {
+                // Edycja istniejącej osoby
+                var osobaToUpdate = await DbContext.Osoby.FindAsync(editingOsoba.Id);
+                if (osobaToUpdate != null)
+                {
+                    osobaToUpdate.Nazwisko = currentOsoba.Nazwisko;
+                    await DbContext.SaveChangesAsync();
+                }
+            }
+            else
+            {
+                // Dodawanie nowej osoby
+                DbContext.Osoby.Add(currentOsoba);
+                await DbContext.SaveChangesAsync();
+            }
+
+            // Resetuj formularz
+            currentOsoba = new Osoba();
+            editingOsoba = null;
+            await LoadOsoby();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Błąd podczas zapisu: {ex.Message}");
+        }
+    }
+
+    private void EditOsoba(Osoba osoba)
+    {
+        editingOsoba = osoba;
+        currentOsoba = new Osoba
+        {
+            Id = osoba.Id,
+            Nazwisko = osoba.Nazwisko
+        };
+    }
+
+    private void CancelEdit()
+    {
+        editingOsoba = null;
+        currentOsoba = new Osoba();
+    }
+
+    private async Task DeleteOsoba(int id)
+    {
+        var osoba = await DbContext.Osoby.FindAsync(id);
+        if (osoba != null)
+        {
+            DbContext.Osoby.Remove(osoba);
+            await DbContext.SaveChangesAsync();
+            await LoadOsoby();
+        }
+    }
+}
