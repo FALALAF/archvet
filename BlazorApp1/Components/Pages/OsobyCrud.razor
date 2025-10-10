@@ -27,7 +27,18 @@
                     <InputText class="form-control" @bind-Value="currentOsoba.Nazwisko" />
                     <ValidationMessage For="@(() => currentOsoba.Nazwisko)" />
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Płeć:</label>
+                    <InputSelect class="form-select" @bind-Value="currentOsoba.PlecId">
+                        <option value="0">-- wybierz płeć --</option>
+                        @foreach (var p in plecLista)
+                        {
+                            <option value="@p.Id">@p.Nazwa</option>
+                        }
+                    </InputSelect>
 
+                    <ValidationMessage For="@(() => currentOsoba.PlecId)" />
+                </div>
                 <div class="btn-group">
                     <button type="submit" class="btn btn-primary">
                         @(editingOsoba != null ? "Zapisz zmiany" : "Dodaj")
@@ -62,8 +73,8 @@
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            @* <th>ID</th> *@
                             <th>Nazwisko</th>
+                            <th>Płeć</th>
                             <th>Akcje</th>
                         </tr>
                     </thead>
@@ -71,8 +82,8 @@
                         @foreach (var osoba in osoby)
                         {
                             <tr>
-                                @* <td>@osoba.Id</td> *@
                                 <td>@osoba.Nazwisko</td>
+                                <td>@osoba.Plec?.Nazwa</td> <!-- 🔹 Wyświetl nazwę płci -->
                                 <td>
                                     <button class="btn btn-sm btn-warning" @onclick="() => EditOsoba(osoba)" title="Edytuj">
                                         <i class="bi bi-pencil"></i>
@@ -95,21 +106,22 @@
     private Osoba currentOsoba = new Osoba();
     private Osoba? editingOsoba = null;
 
+    private List<Plec> plecLista = new(); // 🔹 lista dla dropdowna
+
     private async Task LoadOsoby()
     {
-        osoby = await DbContext.Osoby.ToListAsync();
+        osoby = await DbContext.Osoby.Include(o => o.Plec).ToListAsync(); // 🔹 pobieraj też płeć
     }
 
     protected override async Task OnInitializedAsync()
     {
-        currentOsoba = new Osoba(); // 🔹 dodaj to
+        currentOsoba = new Osoba();
+        plecLista = await DbContext.SlownikPlec.ToListAsync(); // 🔹 załaduj dane do dropdowna
         await LoadOsoby();
     }
 
     private async Task SaveOsoba()
     {
-        Console.WriteLine($"===> Kliknięto Zapisz, editingOsoba = {editingOsoba != null}, Nazwisko = '{currentOsoba?.Nazwisko}'");
-
         try
         {
             if (editingOsoba != null)
@@ -118,15 +130,19 @@
                 if (osobaToUpdate != null)
                 {
                     osobaToUpdate.Nazwisko = currentOsoba.Nazwisko;
+                    osobaToUpdate.PlecId = currentOsoba.PlecId; // 🔹 dodane
                     await DbContext.SaveChangesAsync();
                 }
             }
             else
             {
-                Console.WriteLine($"===> Dodawanie nowej osoby: {currentOsoba?.Nazwisko}");
-                if (!string.IsNullOrWhiteSpace(currentOsoba.Nazwisko)) // 🔹 sprawdzenie
+                if (!string.IsNullOrWhiteSpace(currentOsoba.Nazwisko))
                 {
-                    DbContext.Osoby.Add(new Osoba { Nazwisko = currentOsoba.Nazwisko }); // 🔹 nowy obiekt
+                    DbContext.Osoby.Add(new Osoba
+                    {
+                        Nazwisko = currentOsoba.Nazwisko,
+                        PlecId = currentOsoba.PlecId // 🔹 dodane
+                    });
                     await DbContext.SaveChangesAsync();
                 }
             }
@@ -135,13 +151,14 @@
             currentOsoba = new Osoba();
             editingOsoba = null;
             await LoadOsoby();
-            StateHasChanged(); // 🔹 wymuś odświeżenie UI
+            StateHasChanged();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Błąd podczas zapisu: {ex.Message}");
         }
     }
+
 
 
     private void EditOsoba(Osoba osoba)
@@ -152,7 +169,8 @@
         currentOsoba = new Osoba
         {
             Id = osoba.Id,
-            Nazwisko = osoba.Nazwisko
+            Nazwisko = osoba.Nazwisko,
+            PlecId = osoba.PlecId // 🔹 dodane
         };
     }
 
