@@ -27,9 +27,12 @@ jobs:
       - name: Publish project
         run: dotnet publish BlazorApp1/BlazorApp1.csproj -c Release -o out
       
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+      
       - name: Deploy to Railway
-        uses: railwayapp/railway-deploy@v1
-        with:
-          railway_token: ${{ secrets.RAILWAY_API_KEY }}
-          service: ${{ secrets.RAILWAY_SERVICE_ID }}
-          project_id: ${{ secrets.RAILWAY_PROJECT_ID }}
+        working-directory: ./out
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_KEY }}
+        run: |
+          railway up --service ${{ secrets.RAILWAY_SERVICE_ID }} --project ${{ secrets.RAILWAY_PROJECT_ID }}
