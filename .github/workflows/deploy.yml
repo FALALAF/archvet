@@ -8,6 +8,7 @@ on:
 jobs:
   build-test-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,7 +25,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test --no-build --verbosity normal || true
+        run: dotnet test --no-build --verbosity normal || true  # || true powoduje, że workflow nie przerywa się przy błędach testów
 
       - name: Publish project
         run: dotnet publish BlazorApp1/BlazorApp1.csproj -c Release -o out
@@ -34,5 +35,5 @@ jobs:
 
       - name: Deploy to Railway
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_KEY }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_KEY }}   # Twój Account API Key
         run: railway up --service ${{ secrets.RAILWAY_SERVICE_ID }} --ci
