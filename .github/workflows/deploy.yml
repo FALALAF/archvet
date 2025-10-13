@@ -30,20 +30,8 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
       
-      - name: Create Railway config
-        run: |
-          cat > railway.json << EOF
-          {
-            "projectId": "${{ secrets.RAILWAY_PROJECT_ID }}",
-            "serviceId": "${{ secrets.RAILWAY_SERVICE_ID }}"
-          }
-          EOF
-          cat railway.json
-      
       - name: Deploy to Railway
+        working-directory: ./out
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_KEY }}
-        run: |
-          cp railway.json out/
-          cd out
-          railway up --detach
+        run: railway up
