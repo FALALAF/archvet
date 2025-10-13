@@ -32,12 +32,13 @@ jobs:
       - name: Publish Blazor App
         run: dotnet publish -c Release -o output
 
-      # 6. Deploy to Railway
+           # 6. Deploy to Railway
       - name: Deploy to Railway
         env:
-          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_KEY }}
         run: |
           curl -sL https://railway.app/install.sh | sh
-          railway login --apiKey $RAILWAY_API_KEY
+          railway login
           cd output
           railway up --detach
+
