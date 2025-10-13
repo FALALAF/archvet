@@ -34,6 +34,6 @@ jobs:
         working-directory: ./out
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_KEY }}
-          RAILWAY_SERVICE: ${{ secrets.RAILWAY_SERVICE_ID }}
-          RAILWAY_ENVIRONMENT: production
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
         run: railway up
