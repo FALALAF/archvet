@@ -3,42 +3,34 @@ name: CI/CD BlazorApp to Railway
 on:
   push:
     branches:
-      - main  # zmień jeśli używasz innej gałęzi
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Setup .NET
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'  # wersja .NET
+          dotnet-version: '8.0.x'
 
-      # 3. Restore dependencies
       - name: Restore dependencies
         run: dotnet restore
 
-      # 4. Build
       - name: Build project
         run: dotnet build --configuration Release --no-restore
 
-      # 5. Publish
       - name: Publish Blazor App
         run: dotnet publish -c Release -o output
 
-           # 6. Deploy to Railway
       - name: Deploy to Railway
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_KEY }}
-        run: |
-          curl -sL https://railway.app/install.sh | sh
-          railway login
-          cd output
-          railway up --detach
-
+        uses: railwayapp/railway-action@v2
+        with:
+          projectId: ${{ secrets.RAILWAY_PROJECT_ID }}
+          serviceId: ${{ secrets.RAILWAY_SERVICE_ID }}
+          apiKey: ${{ secrets.RAILWAY_API_KEY }}
+          directory: './output'
