@@ -10,8 +10,8 @@ namespace BlazorApp1.Data
         {
         }
 
-        public DbSet<Osoba> Osoby { get; set; }
-        public DbSet<Plec> SlownikPlec { get; set; }
+        //public DbSet<Osoba> Osoby { get; set; }
+        //public DbSet<Plec> SlownikPlec { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
