@@ -32,17 +32,17 @@ jobs:
       - name: Run tests
         run: dotnet test --no-build --verbosity normal || true
 
-      # 6️⃣ Publish project (opcjonalne, jeśli chcesz mieć out folder)
+      # 6️⃣ Publish project (opcjonalne, jeśli chcesz mieć katalog out)
       - name: Publish project
         run: dotnet publish BlazorApp1/BlazorApp1.csproj -c Release -o out
 
-      # 7️⃣ Install Railway CLI (bez npm)
+      # 7️⃣ Install Railway CLI (bez Node.js lokalnie)
       - name: Install Railway CLI
         run: curl -fsSL https://railway.app/install.sh | sh
 
-      # 8️⃣ Deploy to Railway
+      # 8️⃣ Deploy to Railway (z określonym serwisem)
       - name: Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_KEY }}
           RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
-        run: railway up
+        run: railway up --service $RAILWAY_SERVICE_ID
