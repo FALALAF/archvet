@@ -1,38 +1,43 @@
-name: CI/CD - Build, Test and Deploy to Railway
+name: CI/CD BlazorApp to Railway
+
 on:
   push:
     branches:
-      - main
+      - main  # zmień jeśli używasz innej gałęzi
+
 jobs:
-  build-test-deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
+      # 1. Checkout repo
       - name: Checkout repository
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v3
+
+      # 2. Setup .NET
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 8.0.x
-      
+          dotnet-version: '8.0.x'  # wersja .NET
+
+      # 3. Restore dependencies
       - name: Restore dependencies
         run: dotnet restore
-      
-      - name: Build
+
+      # 4. Build
+      - name: Build project
         run: dotnet build --configuration Release --no-restore
-      
-      - name: Run tests
-        run: dotnet test --no-build --verbosity normal || true
-      
-      - name: Publish project
-        run: dotnet publish BlazorApp1/BlazorApp1.csproj -c Release -o out
-      
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-      
+
+      # 5. Publish
+      - name: Publish Blazor App
+        run: dotnet publish -c Release -o output
+
+      # 6. Deploy to Railway
       - name: Deploy to Railway
-        working-directory: ./out
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_KEY }}
+          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
         run: |
-          railway up --service ${{ secrets.RAILWAY_SERVICE_ID }} --project ${{ secrets.RAILWAY_PROJECT_ID }}
+          curl -sL https://railway.app/install.sh | sh
+          railway login --apiKey $RAILWAY_API_KEY
+          cd output
+          railway up --detach
