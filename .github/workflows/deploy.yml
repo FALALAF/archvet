@@ -9,24 +9,27 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
+      
       - name: Restore dependencies
         run: dotnet restore
+      
       - name: Build
         run: dotnet build --configuration Release --no-restore
+      
       - name: Run tests
         run: dotnet test --no-build --verbosity normal || true
+      
       - name: Publish project
         run: dotnet publish BlazorApp1/BlazorApp1.csproj -c Release -o out
+      
       - name: Deploy to Railway
-        run: |
-          curl -fsSL https://railway.app/install.sh | sh
-          export PATH="/home/runner/.railway/bin:$PATH"
-          cd out
-          railway up --service ${{ secrets.RAILWAY_SERVICE_ID }}
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_KEY }}
-          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+        uses: railwayapp/railway-deploy@v1
+        with:
+          railway_token: ${{ secrets.RAILWAY_API_KEY }}
+          service: ${{ secrets.RAILWAY_SERVICE_ID }}
+          project_id: ${{ secrets.RAILWAY_PROJECT_ID }}
