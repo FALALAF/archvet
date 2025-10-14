@@ -1,0 +1,179 @@
+﻿@page "/admin"
+@rendermode InteractiveServer
+@using BlazorApp1.Services
+@inject AuthService AuthService
+
+<div class="container mt-5">
+    <h2>Panel Administratora</h2>
+    <p class="text-muted">Zarządzanie użytkownikami systemu</p>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+
+    @if (users == null)
+    {
+        <p>Ładowanie...</p>
+    }
+    else if (users.Count == 0)
+    {
+        <p>Brak użytkowników w systemie.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nazwa</th>
+                    <th>Email</th>
+                    <th>Data rejestracji</th>
+                    <th>Rola</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in users)
+                {
+                    <tr>
+                        <td>@user.DisplayName</td>
+                        <td>@user.Email</td>
+                        <td>@user.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>
+                            @if (user.IsAdmin)
+                            {
+                                <span class="badge bg-danger">Admin</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-primary">User</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!user.IsAdmin)
+                            {
+                                <button class="btn btn-sm btn-warning" @onclick="() => ShowResetPasswordModal(user)">
+                                    Resetuj hasło
+                                </button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => DeleteUser(user.Id)">
+                                    Usuń
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@if (showResetPasswordModal && selectedUser != null)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Resetuj hasło dla: @selectedUser.DisplayName</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nowe hasło:</label>
+                        <input type="password" class="form-control" @bind="newPassword" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">Anuluj</button>
+                    <button type="button" class="btn btn-primary" @onclick="ResetPassword">Resetuj</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<AuthService.UserDto>? users;
+    private string? errorMessage;
+    private string? successMessage;
+    private bool showResetPasswordModal = false;
+    private AuthService.UserDto? selectedUser;
+    private string newPassword = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        users = await AuthService.GetAllUsersAsync();
+    }
+
+    private async Task DeleteUser(string userId)
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Czy na pewno chcesz usunąć tego użytkownika?"))
+            return;
+
+        var result = await AuthService.DeleteUserAsync(userId);
+
+        if (result.Success)
+        {
+            successMessage = result.Message;
+            errorMessage = null;
+            await LoadUsers();
+        }
+        else
+        {
+            errorMessage = result.Message;
+            successMessage = null;
+        }
+    }
+
+    private void ShowResetPasswordModal(AuthService.UserDto user)
+    {
+        selectedUser = user;
+        newPassword = "";
+        showResetPasswordModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showResetPasswordModal = false;
+        selectedUser = null;
+        newPassword = "";
+    }
+
+    private async Task ResetPassword()
+    {
+        if (string.IsNullOrWhiteSpace(newPassword))
+        {
+            errorMessage = "Hasło nie może być puste";
+            return;
+        }
+
+        var result = await AuthService.ResetPasswordAsync(selectedUser!.Id, newPassword);
+
+        if (result.Success)
+        {
+            successMessage = result.Message;
+            errorMessage = null;
+            CloseModal();
+        }
+        else
+        {
+            errorMessage = result.Message;
+            successMessage = null;
+        }
+    }
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; } = default!;
+}

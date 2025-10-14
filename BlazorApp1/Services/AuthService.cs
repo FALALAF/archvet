@@ -53,6 +53,55 @@ namespace BlazorApp1.Services
             return (true, "Rejestracja pomyślna! Możesz się teraz zalogować.");
         }
 
+        public async Task<List<UserDto>> GetAllUsersAsync()
+        {
+            var users = _userManager.Users.ToList();
+            var userDtos = new List<UserDto>();
+
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                userDtos.Add(new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email!,
+                    DisplayName = user.DisplayName ?? "",
+                    CreatedAt = user.CreatedAt,
+                    IsAdmin = roles.Contains("Admin")
+                });
+            }
+
+            return userDtos;
+        }
+
+        public async Task<(bool Success, string Message)> DeleteUserAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return (false, "Użytkownik nie istnieje");
+
+            var result = await _userManager.DeleteAsync(user);
+            if (result.Succeeded)
+                return (true, "Użytkownik został usunięty");
+
+            return (false, "Błąd podczas usuwania użytkownika");
+        }
+
+        public async Task<(bool Success, string Message)> ResetPasswordAsync(string userId, string newPassword)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return (false, "Użytkownik nie istnieje");
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+
+            if (result.Succeeded)
+                return (true, "Hasło zostało zresetowane");
+
+            return (false, string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+
         private async Task<string> GenerateJwtToken(User user)
         {
             var roles = await _userManager.GetRolesAsync(user);
@@ -79,5 +128,14 @@ namespace BlazorApp1.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-    }
+
+        public class UserDto
+        {
+            public string Id { get; set; } = "";
+            public string Email { get; set; } = "";
+            public string DisplayName { get; set; } = "";
+            public DateTime CreatedAt { get; set; }
+            public bool IsAdmin { get; set; }
+        }
+    } // <-- To jest koniec klasy AuthService
 }
