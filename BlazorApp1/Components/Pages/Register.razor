@@ -1,0 +1,115 @@
+﻿@page "/register"
+@rendermode InteractiveServer
+@using BlazorApp1.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Rejestracja</h3>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <div class="alert alert-success">@successMessage</div>
+                    }
+
+                    <EditForm Model="@registerModel" OnValidSubmit="HandleRegister" FormName="registerForm">
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label class="form-label">Nazwa wyświetlana:</label>
+                            <InputText @bind-Value="registerModel.DisplayName" class="form-control" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email:</label>
+                            <InputText @bind-Value="registerModel.Email" class="form-control" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Hasło:</label>
+                            <InputText @bind-Value="registerModel.Password" type="password" class="form-control" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Powtórz hasło:</label>
+                            <InputText @bind-Value="registerModel.ConfirmPassword" type="password" class="form-control" />
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100" disabled="@isLoading">
+                            @if (isLoading)
+                            {
+                                <span>Rejestracja...</span>
+                            }
+                            else
+                            {
+                                <span>Zarejestruj się</span>
+                            }
+                        </button>
+                    </EditForm>
+
+                    <hr />
+                    <p class="text-center">
+                        Masz już konto? <a href="/login">Zaloguj się</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterModel registerModel = new();
+    private string? errorMessage;
+    private string? successMessage;
+    private bool isLoading;
+
+    private async Task HandleRegister()
+    {
+        isLoading = true;
+        errorMessage = null;
+        successMessage = null;
+
+        if (registerModel.Password != registerModel.ConfirmPassword)
+        {
+            errorMessage = "Hasła nie są identyczne";
+            isLoading = false;
+            return;
+        }
+
+        var result = await AuthService.RegisterAsync(
+            registerModel.Email,
+            registerModel.Password,
+            registerModel.DisplayName
+        );
+
+        if (result.Success)
+        {
+            successMessage = result.Message;
+            await Task.Delay(2000);
+            Navigation.NavigateTo("/login");
+        }
+        else
+        {
+            errorMessage = result.Message;
+        }
+
+        isLoading = false;
+    }
+
+    public class RegisterModel
+    {
+        public string DisplayName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+        public string ConfirmPassword { get; set; } = "";
+    }
+}
