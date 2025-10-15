@@ -1,0 +1,60 @@
+﻿@rendermode InteractiveServer
+@using BlazorApp1.Services
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">BlazorApp</a>
+
+        <div class="ms-auto d-flex align-items-center">
+            @if (AuthState.IsAuthenticated)
+            {
+                <span class="text-white me-3">
+                    Witaj, <strong>@AuthState.DisplayName</strong>
+                    @if (AuthState.IsAdmin)
+                    {
+                        <span class="badge bg-danger ms-1">Admin</span>
+                    }
+                </span>
+
+                @if (AuthState.IsAdmin)
+                {
+                    <button class="btn btn-sm btn-warning me-2" @onclick="GoToAdmin">Panel Admina</button>
+                }
+
+                <button class="btn btn-sm btn-outline-light" @onclick="Logout">Wyloguj</button>
+            }
+            else
+            {
+                <a href="/login" class="btn btn-sm btn-outline-light me-2">Logowanie</a>
+                <a href="/register" class="btn btn-sm btn-primary">Rejestracja</a>
+            }
+        </div>
+    </div>
+</nav>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthState.InitializeAsync();
+        AuthState.OnChange += StateHasChanged;
+    }
+
+    private void GoToAdmin()
+    {
+        Navigation.NavigateTo("/admin");
+    }
+
+    private async Task Logout()
+    {
+        await AuthState.LogoutAsync();
+        Navigation.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        AuthState.OnChange -= StateHasChanged;
+    }
+}

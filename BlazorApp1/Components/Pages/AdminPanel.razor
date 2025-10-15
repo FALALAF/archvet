@@ -2,101 +2,119 @@
 @rendermode InteractiveServer
 @using BlazorApp1.Services
 @inject AuthService AuthService
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
 
-<div class="container mt-5">
-    <h2>Panel Administratora</h2>
-    <p class="text-muted">Zarządzanie użytkownikami systemu</p>
-
-    @if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <div class="alert alert-danger">@errorMessage</div>
-    }
-    @if (!string.IsNullOrEmpty(successMessage))
-    {
-        <div class="alert alert-success">@successMessage</div>
-    }
-
-    @if (users == null)
-    {
-        <p>Ładowanie...</p>
-    }
-    else if (users.Count == 0)
-    {
-        <p>Brak użytkowników w systemie.</p>
-    }
-    else
-    {
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Nazwa</th>
-                    <th>Email</th>
-                    <th>Data rejestracji</th>
-                    <th>Rola</th>
-                    <th>Akcje</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var user in users)
-                {
-                    <tr>
-                        <td>@user.DisplayName</td>
-                        <td>@user.Email</td>
-                        <td>@user.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
-                        <td>
-                            @if (user.IsAdmin)
-                            {
-                                <span class="badge bg-danger">Admin</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-primary">User</span>
-                            }
-                        </td>
-                        <td>
-                            @if (!user.IsAdmin)
-                            {
-                                <button class="btn btn-sm btn-warning" @onclick="() => ShowResetPasswordModal(user)">
-                                    Resetuj hasło
-                                </button>
-                                <button class="btn btn-sm btn-danger" @onclick="() => DeleteUser(user.Id)">
-                                    Usuń
-                                </button>
-                            }
-                            else
-                            {
-                                <span class="text-muted">-</span>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-</div>
-
-@if (showResetPasswordModal && selectedUser != null)
+@if (!isInitialized)
 {
-    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Resetuj hasło dla: @selectedUser.DisplayName</h5>
-                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Nowe hasło:</label>
-                        <input type="password" class="form-control" @bind="newPassword" />
+    <p>Ładowanie...</p>
+}
+else if (!AuthState.IsAdmin)
+{
+    <div class="container mt-5">
+        <div class="alert alert-danger">
+            <h4>Brak dostępu</h4>
+            <p>Nie masz uprawnień do tej strony.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container mt-5">
+        <h2>Panel Administratora</h2>
+        <p class="text-muted">Zarządzanie użytkownikami systemu</p>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+
+        @if (users == null)
+        {
+            <p>Ładowanie użytkowników...</p>
+        }
+        else if (users.Count == 0)
+        {
+            <p>Brak użytkowników w systemie.</p>
+        }
+        else
+        {
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Nazwa</th>
+                        <th>Email</th>
+                        <th>Data rejestracji</th>
+                        <th>Rola</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in users)
+                    {
+                        <tr>
+                            <td>@user.DisplayName</td>
+                            <td>@user.Email</td>
+                            <td>@user.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                            <td>
+                                @if (user.IsAdmin)
+                                {
+                                    <span class="badge bg-danger">Admin</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-primary">User</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!user.IsAdmin)
+                                {
+                                    <button class="btn btn-sm btn-warning" @onclick="() => ShowResetPasswordModal(user)">
+                                        Resetuj hasło
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteUser(user.Id)">
+                                        Usuń
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    @if (showResetPasswordModal && selectedUser != null)
+    {
+        <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Resetuj hasło dla: @selectedUser.DisplayName</h5>
+                        <button type="button" class="btn-close" @onclick="CloseModal"></button>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">Anuluj</button>
-                    <button type="button" class="btn btn-primary" @onclick="ResetPassword">Resetuj</button>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nowe hasło:</label>
+                            <input type="password" class="form-control" @bind="newPassword" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseModal">Anuluj</button>
+                        <button type="button" class="btn btn-primary" @onclick="ResetPassword">Resetuj</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    }
 }
 
 @code {
@@ -106,10 +124,20 @@
     private bool showResetPasswordModal = false;
     private AuthService.UserDto? selectedUser;
     private string newPassword = "";
+    private bool isInitialized = false;
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadUsers();
+        await AuthState.InitializeAsync();
+        isInitialized = true;
+
+        if (AuthState.IsAdmin)
+        {
+            await LoadUsers();
+        }
     }
 
     private async Task LoadUsers()
@@ -173,7 +201,4 @@
             successMessage = null;
         }
     }
-
-    [Inject]
-    private IJSRuntime JSRuntime { get; set; } = default!;
 }

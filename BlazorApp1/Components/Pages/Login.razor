@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using BlazorApp1.Services
 @inject AuthService AuthService
+@inject AuthStateService AuthState
 @inject NavigationManager Navigation
 
 <div class="container mt-5">
@@ -15,10 +16,6 @@
                     @if (!string.IsNullOrEmpty(errorMessage))
                     {
                         <div class="alert alert-danger">@errorMessage</div>
-                    }
-                    @if (!string.IsNullOrEmpty(successMessage))
-                    {
-                        <div class="alert alert-success">@successMessage</div>
                     }
 
                     <EditForm Model="@loginModel" OnValidSubmit="HandleLogin" FormName="loginForm">
@@ -59,23 +56,18 @@
 @code {
     private LoginModel loginModel = new();
     private string? errorMessage;
-    private string? successMessage;
     private bool isLoading;
 
     private async Task HandleLogin()
     {
         isLoading = true;
         errorMessage = null;
-        successMessage = null;
 
         var result = await AuthService.LoginAsync(loginModel.Email, loginModel.Password);
 
-        if (result.Success)
+        if (result.Success && result.Token != null)
         {
-            successMessage = result.Message;
-            // Tu możesz zapisać token do localStorage lub session
-            // Na razie przekierujemy na stronę główną
-            await Task.Delay(1000);
+            await AuthState.SetAuthenticationAsync(result.Token);  // ASYNC!
             Navigation.NavigateTo("/");
         }
         else
