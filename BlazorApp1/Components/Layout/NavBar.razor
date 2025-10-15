@@ -4,36 +4,83 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/">BlazorApp</a>
+<style>
+    .auth-section {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
-        <div class="ms-auto d-flex align-items-center">
-            @if (AuthState.IsAuthenticated)
+    .user-info {
+        background: #f8f9fa;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+        font-size: 0.9rem;
+    }
+
+        .user-info strong {
+            color: #495057;
+        }
+
+    .btn-custom {
+        font-size: 0.875rem;
+        padding: 6px 12px;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+
+    .btn-admin-custom {
+        background-color: #ffc107;
+        color: #000;
+        border: none;
+    }
+
+        .btn-admin-custom:hover {
+            background-color: #ffb300;
+            transform: translateY(-1px);
+        }
+
+    .btn-logout-custom {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+    }
+
+        .btn-logout-custom:hover {
+            background-color: #5a6268;
+            transform: translateY(-1px);
+        }
+</style>
+
+<div class="auth-section">
+    @if (AuthState.IsAuthenticated)
+    {
+        <div class="user-info">
+            Witaj, <strong>@AuthState.DisplayName</strong>
+            @if (AuthState.IsAdmin)
             {
-                <span class="text-white me-3">
-                    Witaj, <strong>@AuthState.DisplayName</strong>
-                    @if (AuthState.IsAdmin)
-                    {
-                        <span class="badge bg-danger ms-1">Admin</span>
-                    }
-                </span>
-
-                @if (AuthState.IsAdmin)
-                {
-                    <button class="btn btn-sm btn-warning me-2" @onclick="GoToAdmin">Panel Admina</button>
-                }
-
-                <button class="btn btn-sm btn-outline-light" @onclick="Logout">Wyloguj</button>
-            }
-            else
-            {
-                <a href="/login" class="btn btn-sm btn-outline-light me-2">Logowanie</a>
-                <a href="/register" class="btn btn-sm btn-primary">Rejestracja</a>
+                <span class="badge bg-danger ms-1">Admin</span>
             }
         </div>
-    </div>
-</nav>
+
+        @if (AuthState.IsAdmin)
+        {
+            <button class="btn btn-sm btn-admin-custom btn-custom" @onclick="GoToAdmin">
+                Panel Admina
+            </button>
+        }
+
+        <button class="btn btn-sm btn-logout-custom btn-custom" @onclick="Logout">
+            Wyloguj
+        </button>
+    }
+    else
+    {
+        <a href="/login" class="btn btn-sm btn-outline-primary btn-custom">Logowanie</a>
+        <a href="/register" class="btn btn-sm btn-primary btn-custom">Rejestracja</a>
+    }
+</div>
 
 @code {
     protected override async Task OnInitializedAsync()
