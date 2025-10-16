@@ -1,5 +1,6 @@
-using BlazorApp1.Components;
+ï»¿using BlazorApp1.Components;
 using BlazorApp1.Data;
+using BlazorApp1.Data.Hodowca;
 using BlazorApp1.Models;
 using BlazorApp1.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -18,6 +19,10 @@ builder.Services.AddRazorComponents()
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddQuickGridEntityFrameworkAdapter();
+
+builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
 // Dodaj Identity
 builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
@@ -25,7 +30,7 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
     options.Password.RequireLowercase = false;
     options.Password.RequireUppercase = false;
     options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 4; // Minimum 4 znaki (mo¿esz zmieniæ)
+    options.Password.RequiredLength = 4; // Minimum 4 znaki (moï¿½esz zmieniï¿½)
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
@@ -52,21 +57,24 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AuthStateService>();
 
+builder.Services.AddDbContext<HodowcaDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("hodowcaConnection")));
+
 var app = builder.Build();
 
-// Tworzenie domyœlnego admina przy starcie
+// Tworzenie domyï¿½lnego admina przy starcie
 using (var scope = app.Services.CreateScope())
 {
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-    // Tworzenie roli Admin jeœli nie istnieje
+    // Tworzenie roli Admin jeï¿½li nie istnieje
     if (!await roleManager.RoleExistsAsync("Admin"))
     {
         await roleManager.CreateAsync(new IdentityRole("Admin"));
     }
 
-    // Tworzenie domyœlnego admina jeœli nie istnieje
+    // Tworzenie domyï¿½lnego admina jeï¿½li nie istnieje
     var adminEmail = "admin@admin.com";
     if (await userManager.FindByEmailAsync(adminEmail) == null)
     {
@@ -89,6 +97,7 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
+    app.UseMigrationsEndPoint();
 }
 
 app.UseHttpsRedirection();
